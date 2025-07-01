@@ -97,6 +97,7 @@ def camera_initialization():
 
 @app.post("/camera_predictor")
 async def camera_predictor(file: UploadFile = File(...)):
+    print('Received file for camera predictor')
     contents = await file.read()
     frame = Image.open(io.BytesIO(contents)).convert("RGB")
 
@@ -146,6 +147,8 @@ async def predict(file: UploadFile = File(...),
         "coordinates": {"x": point_x, "y": point_y},
         "generated_masks": (out_mask_logits > 0.0).cpu().numpy().tolist()
     })
+
+# JSON file can be very slow. Maybe ByteString
 
     '''
     # Load the image
