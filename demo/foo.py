@@ -1,6 +1,5 @@
-
-# if using Apple MPS, fall back to CPU for unsupported ops
 import os
+# if using Apple MPS, fall back to CPU for unsupported ops
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import numpy as np
 import torch
@@ -9,8 +8,6 @@ from PIL import Image
 
 from sam2.build_sam import build_sam2 #, build_sam2_camera_predictor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
-
-
 
 # select the device for computation
 if torch.cuda.is_available():
@@ -36,9 +33,6 @@ model_cfg = "configs/sam2.1/sam2.1_hiera_t"
 sam2_model = build_sam2(model_cfg, sam2_checkpoint, device=device)
 
 predictor = SAM2ImagePredictor(sam2_model)
-'''predictor = build_sam2_camera_predictor(
-    model_cfg, sam2_checkpoint, device=device, vos_optimized=True
-)'''
 
 
 def show_mask(mask, ax, random_color=False, borders = True):
@@ -85,13 +79,10 @@ def show_masks(image, masks, scores, point_coords=None, box_coords=None, input_l
         plt.show()
 
 from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse
 import io
-import base64
 
 app = FastAPI()
-# TODO: keep using the camera predictor for the first frame, but reset the first frame every xxx often
-# Using predictor.track could be super fast
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...),
@@ -153,23 +144,9 @@ async def predict(file: UploadFile = File(...),
 
     # Convert the mask logits to a byte string for JSON response
     mask_array = np.array(Image.open("demo/images/unity_best_mask.jpg").convert("L"))
-    # print(mask_array.tolist())
-    # print(mask_array.tolist())
-
-
-    # show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0]),
-    #    "generated_masks": (out_mask_logits > 0.0).cpu().numpy().tolist()
-    # "generated_masks": (out_mask_logits > 0.0).cpu().numpy().tolist()
-    '''return JSONResponse(content={
-        "message": "Prediction completed successfully!",
-        "coordinates": {"x": point_x, "y": point_y},
-        "mask_array": mask_array.tolist()
-    })'''
-    # return JSONResponse(content={"message": "Prediction completed successfully!"})
-    return JSONResponse(mask_array.tolist())
     
-
-# JSON file can be very slow. Maybe ByteString
+    # Return the mask as a ByteString array in the JSON response
+    return JSONResponse(mask_array.tolist())
 
 if __name__ == "__main__":
     import uvicorn
